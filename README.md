@@ -99,6 +99,53 @@ To update the SSOCircle certificates within the keystore, just run:
 
 	Actually there is nothing wrong with the used configuration, thus you can just ignore that message.
 
+## Run with Keycloak
+
+This example is also known to work with the [Keycloak](https://www.keycloak.org/) SAML Server (tested on 4.8.3.Final).
+```
+-Dkeycloak.auth-server-url=http://localhost:8081/auth/realms/demo
+```
+
+
+### Setup Keycloak Client
+
+Create a new `SAML` client in Keycloak with the client-id `com:vdenotaris:spring:sp`.
+In the client `settings` tab configure the following:
+* Include AuthnStatement `On`
+* Include OneTimeUse Condition `Off`
+* Sign Documents `On`
+* Optimize REDIRECT signing key lookup  `Off`
+* Sign Assertions `On`
+* Signature Algorithm `RSA_SHA256`
+* SAML Signature Key Name `KEY_ID`
+* Canonicalization Method `EXCLUSIVE`
+* Encrypt Assertions `Off`
+* Client Signature Required `On`
+* Force POST Binding `On`
+* Front Channel Logout `On`
+* Force Name ID Format `Off`
+* Name ID Format `username`
+* Root URL `http://localhost:8080` 
+* Valid Redirect URIs `/saml/*`
+* Base URL `/`
+* Master SAML Processing URL `/saml`
+* Open Fine Grain SAML Endpoint Configuration
+* Logout Service POST Binding URL `/saml/logout`
+* Logout Service Redirect Binding URL `/saml`
+
+In the `SAML Keys` tab you need to import the Keystore of the example app. 
+* Click on `import`
+* Archive Format `JKS`
+* Key-Alias `apollo`
+* Store pass `nalle123`
+* Select configure the path to  `src/main/resources/saml/samlKeystore.jks`
+
+### Login via Keycloak
+
+* Browse to http://localhost:8080
+* Click on `Getting started`
+* Under `Select your Identity Provider` choose `http://localhost:8081/auth/realms/demo` and click `Start 3rd Party Login`.
+
 ---------
 
 ### License
