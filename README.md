@@ -128,10 +128,9 @@ In the client `settings` tab configure the following:
 * Root URL `http://localhost:8080` 
 * Valid Redirect URIs `/saml/*`
 * Base URL `/`
-* Master SAML Processing URL `/saml`
 * Open Fine Grain SAML Endpoint Configuration
+* Assertion Consumer Service POST Binding URL `/saml/SSO`
 * Logout Service POST Binding URL `/saml/logout`
-* Logout Service Redirect Binding URL `/saml`
 
 In the `SAML Keys` tab you need to import the Keystore of the example app. 
 * Click on `import`
