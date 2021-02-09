@@ -35,8 +35,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -103,7 +105,10 @@ import com.vdenotaris.spring.boot.security.saml.web.core.SAMLUserDetailsServiceI
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(securedEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter implements InitializingBean, DisposableBean {
- 
+
+    @Value("${keycloak.auth-server-url}")
+    private String keycloakAuthUrl;
+
 	private Timer backgroundTaskTimer;
 	private MultiThreadedHttpConnectionManager multiThreadedHttpConnectionManager;
 
@@ -259,22 +264,22 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter implements I
         idpDiscovery.setIdpSelectionPath("/saml/discovery");
         return idpDiscovery;
     }
-    
-	@Bean
-	@Qualifier("idp-ssocircle")
-	public ExtendedMetadataDelegate ssoCircleExtendedMetadataProvider()
-			throws MetadataProviderException {
-		String idpSSOCircleMetadataURL = "https://idp.ssocircle.com/idp-meta.xml";
-		HTTPMetadataProvider httpMetadataProvider = new HTTPMetadataProvider(
-				this.backgroundTaskTimer, httpClient(), idpSSOCircleMetadataURL);
-		httpMetadataProvider.setParserPool(parserPool());
-		ExtendedMetadataDelegate extendedMetadataDelegate = 
-				new ExtendedMetadataDelegate(httpMetadataProvider, extendedMetadata());
-		extendedMetadataDelegate.setMetadataTrustCheck(true);
-		extendedMetadataDelegate.setMetadataRequireSignature(false);
-		backgroundTaskTimer.purge();
-		return extendedMetadataDelegate;
-	}
+
+    @Bean
+    @Qualifier("idp-keycloak")
+    public ExtendedMetadataDelegate keycloakExtendedMetadataProvider()
+            throws MetadataProviderException {
+        String idpKeycloakMetadataURL = keycloakAuthUrl + "/protocol/saml/descriptor";
+        HTTPMetadataProvider httpMetadataProvider = new HTTPMetadataProvider(
+                this.backgroundTaskTimer, httpClient(), idpKeycloakMetadataURL);
+        httpMetadataProvider.setParserPool(parserPool());
+        ExtendedMetadataDelegate extendedMetadataDelegate =
+                new ExtendedMetadataDelegate(httpMetadataProvider, extendedMetadata());
+        extendedMetadataDelegate.setMetadataTrustCheck(true);
+        extendedMetadataDelegate.setMetadataRequireSignature(false);
+        backgroundTaskTimer.purge();
+        return extendedMetadataDelegate;
+    }
 
     // IDP Metadata configuration - paths to metadata of IDPs in circle of trust
     // is here
@@ -283,7 +288,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter implements I
     @Qualifier("metadata")
     public CachingMetadataManager metadata() throws MetadataProviderException {
         List<MetadataProvider> providers = new ArrayList<MetadataProvider>();
-        providers.add(ssoCircleExtendedMetadataProvider());
+        providers.add(keycloakExtendedMetadataProvider());
         return new CachingMetadataManager(providers);
     }
  
